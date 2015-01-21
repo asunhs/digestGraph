@@ -4,8 +4,24 @@
     <meta charset="UTF-8">
     <title></title>
     <script src="lib/underscore.js"></script>
-    <script src="src/dfs.js"></script>
+    <script src="src/simpledfs.js"></script>
     <script src="src/digest.js"></script>
+    <script>
+        var nodes = [Vertex('a'), Vertex('b'), Vertex('c'), Vertex('d'), Vertex('e'), Vertex('f'), Vertex('g')];
+
+        nodes[0].link(nodes[1]);
+        nodes[0].link(nodes[2]);
+        nodes[0].link(nodes[3]);
+        nodes[1].link(nodes[2]);
+        nodes[1].link(nodes[4]);
+        nodes[2].link(nodes[4]);
+        nodes[2].link(nodes[5]);
+        nodes[3].link(nodes[4]);
+        nodes[4].link(nodes[6]);
+        nodes[5].link(nodes[6]);
+
+        var sd = SimpleDFS(nodes);
+    </script>
 </head>
 <body>
 
