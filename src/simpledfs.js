@@ -50,18 +50,31 @@ function SimpleDFS (vertexes) {
     this.graph = vertexes;
 }
 
+
+function findCycle (path) {
+
+    var last = _.last(path),
+        initial = _.initial(path);
+
+    return console.table(initial.slice(initial.lastIndexOf(last)));
+}
+
+
 function digest (vertex, path) {
 
     path = path || [];
 
+    var before = _.last(path);
+
+    path.push(vertex);
+
     if (vertex.visited) {
         // detect cycle;
-        return console.table(path);
+        return findCycle(path);
     }
 
     vertex.visit();
-    _.each(vertex.neighbors, function (neighber) {
-        path.push(neighber);
+    _.each(_.without(vertex.neighbors, before), function (neighber) {
         digest(neighber, path);
         path.pop();
     });
