@@ -34,13 +34,14 @@ Vertex.prototype.leave = function () {
  * @returns {Edge}
  * @constructor
  */
-function Edge (lhs, rhs, weight) {
+function Edge (from, to, weight) {
     if (!(this instanceof Edge)) {
-        return new Edge(lhs, rhs, weight);
+        return new Edge(from, to, weight);
     }
 
     this.weight = weight;
-    this.vertexes = [lhs, rhs];
+    this.from = from;
+    this.to = to;
     this.used = false;
 }
 
@@ -53,17 +54,17 @@ Edge.prototype.clear = function () {
 };
 
 Edge.prototype.is = function (vertex) {
-    return this.vertexes[0] === vertex || this.vertexes[1] === vertex;
+    return this.from === vertex || this.to === vertex;
 };
 
 Edge.prototype.opposite = function (vertex) {
-    return this.vertexes[0] === vertex ? this.vertexes[1] : this.vertexes[0];
+    return this.from === vertex ? this.to : this.from;
 };
 
 Edge.prototype.each = function (job) {
     var result = [];
-    result.push(job(this.vertexes[0], this.vertexes[1], this));
-    result.push(job(this.vertexes[1], this.vertexes[0], this));
+    result.push(job(this.from, this.to, this));
+    result.push(job(this.to, this.from, this));
     return result;
 };
 
@@ -92,7 +93,7 @@ SimpleDFS.prototype.Link = function (vertex, edge) {
 
     this.vertex = vertex;
     this.opposite = edge.opposite(vertex);
-    this.weight = edge.weight;
+    this.weight = edge.from === vertex ? edge.weight : -edge.weight;
     this.edge = edge;
 };
 
@@ -114,7 +115,29 @@ SimpleDFS.prototype.parse = function () {
 
 
 
+
+SimpleDFS.prototype.findCycle = function (path) {
+    var vertex = _.last(path).opposite;
+
+    return _.reduceRight(path, function (cycle, link, index) {
+        if (link.vertex === vertex) {
+            return path.slice(index);
+        }
+        return cycle;
+    }, []);
+};
+
+
 SimpleDFS.prototype.solveCycle = function (cycle) {
+
+    var min = _.min(cycle, function (link) {
+        return link.weight;
+    });
+
+    /*_.each(cycle, function (link) {
+        link.weight -= min.weight;
+    });*/
+
     console.table(_.map(cycle, function (link) {
         return {
             vertex : link.vertex.id,
@@ -130,7 +153,7 @@ SimpleDFS.prototype.trace = function (vertex, path) {
     var self = this;
 
     if (vertex.visited) {
-        return self.solveCycle(path);
+        return self.solveCycle(self.findCycle(path));
     }
 
     vertex.visit();
