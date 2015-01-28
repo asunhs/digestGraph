@@ -1,7 +1,6 @@
 /**
- *
+ * Vertex
  * @param id : vertex id
- * @param neighbors : vertexes linked this vertex
  * @returns {Vertex}
  * @constructor
  */
@@ -15,45 +14,8 @@ function Vertex (id) {
     }
 
     this.id = id;
-    this.neighbors = [];
-    this.edges = [];
     this.visited = false;
 }
-
-Vertex.prototype.link = function (vertex) {
-    this.neighbors.push(vertex);
-    vertex.neighbors.push(this);
-};
-
-Vertex.prototype.unlink = function (vertex) {
-    if (this.neighbors.indexOf(vertex) > 0) {
-        this.neighbors.splice(this.neighbors.indexOf(vertex), 1);
-    }
-
-    if (vertex.neighbors.indexOf(this) > 0) {
-        vertex.neighbors.splice(vertex.neighbors.indexOf(this), 1);
-    }
-};
-
-Vertex.prototype.add = function (edge) {
-    var opposite = edge.opposite(this);
-    this.edges.push(edge);
-    opposite.edges.push(this);
-    this.link(opposite);
-};
-
-Vertex.prototype.remove = function (edge) {
-    if (this.edges.indexOf(edge) > 0) {
-        this.edges.splice(this.edges.indexOf(edge), 1);
-    }
-    var opposite = edge.opposite(this);
-
-    if (opposite.edges.indexOf(edge) > 0) {
-        opposite.edges.splice(opposite.edges.indexOf(edge), 1);
-    }
-
-    this.unlink(opposite);
-};
 
 Vertex.prototype.visit = function () {
     this.visited = true;
@@ -64,7 +26,14 @@ Vertex.prototype.leave = function () {
 };
 
 
-
+/**
+ * Edge
+ * @param lhs : vertex
+ * @param rhs : vertex
+ * @param weight
+ * @returns {Edge}
+ * @constructor
+ */
 function Edge (lhs, rhs, weight) {
     if (!(this instanceof Edge)) {
         return new Edge(lhs, rhs, weight);
@@ -72,8 +41,16 @@ function Edge (lhs, rhs, weight) {
 
     this.weight = weight;
     this.vertexes = [lhs, rhs];
-    lhs.add(this);
+    this.used = false;
 }
+
+Edge.prototype.use = function () {
+    this.used = true;
+};
+
+Edge.prototype.clean = function () {
+    this.used = false;
+};
 
 Edge.prototype.is = function (vertex) {
     return this.vertexes[0] === vertex || this.vertexes[1] === vertex;
@@ -83,55 +60,63 @@ Edge.prototype.opposite = function (vertex) {
     return this.vertexes[0] === vertex ? this.vertex[1] : this.vertex[0];
 };
 
+Edge.prototype.each = function (job) {
+    var result = [];
+    result.push(job(this.vertexes[0], this.vertexes[1], this));
+    result.push(job(this.vertexes[1], this.vertexes[0], this));
+    return result;
+};
 
 
 
 
 
 
-function SimpleDFS (edges) {
+
+function SimpleDFS (vertexes, edges) {
     if (!(this instanceof SimpleDFS)) {
-        return new SimpleDFS(edges);
+        return new SimpleDFS(vertexes, edges);
     }
 
+    this.vertexes = vertexes;
     this.edges = edges;
-    this.vertexes = _.union.apply(_, _.map(edges, function (edge) {
-        return edge.vertexes;
-    }));
+    this.link = {};
+
+    this.parse();
 }
 
+SimpleDFS.prototype.Link = function (vertex, edge) {
+    if (!(this instanceof SimpleDFS.prototype.Link)) {
+        return new SimpleDFS.prototype.Link(vertex, edge);
+    }
 
-function findCycle (path) {
-
-    var last = _.last(path),
-        initial = _.initial(path),
-        cycle = path.slice(initial.lastIndexOf(last));
-
-
-
-    return console.table(cycle);
+    this.vertex = vertex;
+    this.opposite = edge.opposite(vertex);
+    this.weight = edge.weight;
+    this.edge = edge;
 }
+
+SimpleDFS.prototype.parse = function () {
+    var self = this;
+
+    // vertex 만큼 생성
+    _.each(self.vertexes, function (vertex) {
+        self.link[vertex.id] = link[vertex.id] || [];
+    });
+
+    // edge 를 기반으로 link 를 생성
+    _.each(self.edges, function (edge) {
+        return edge.each(function (a) {
+            self.link[a.id].push(new self.Link(a, edge));
+        });
+    });
+};
+
+
 
 
 function digest (vertex, path) {
 
-    path = path || [];
-
-    var before = _.last(path);
-
-    path.push(vertex);
-
-    if (vertex.visited) {
-        // detect cycle;
-        return findCycle(path);
-    }
-
-    vertex.visit();
-    _.each(_.without(vertex.neighbors, before), function (neighber) {
-        digest(neighber, path);
-        path.pop();
-    });
-    vertex.leave();
 }
 
 SimpleDFS.prototype.digest = function () {
