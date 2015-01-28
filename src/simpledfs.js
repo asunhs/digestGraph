@@ -48,7 +48,7 @@ Edge.prototype.use = function () {
     this.used = true;
 };
 
-Edge.prototype.clean = function () {
+Edge.prototype.clear = function () {
     this.used = false;
 };
 
@@ -57,7 +57,7 @@ Edge.prototype.is = function (vertex) {
 };
 
 Edge.prototype.opposite = function (vertex) {
-    return this.vertexes[0] === vertex ? this.vertex[1] : this.vertex[0];
+    return this.vertexes[0] === vertex ? this.vertexes[1] : this.vertexes[0];
 };
 
 Edge.prototype.each = function (job) {
@@ -94,14 +94,14 @@ SimpleDFS.prototype.Link = function (vertex, edge) {
     this.opposite = edge.opposite(vertex);
     this.weight = edge.weight;
     this.edge = edge;
-}
+};
 
 SimpleDFS.prototype.parse = function () {
     var self = this;
 
     // vertex 만큼 생성
     _.each(self.vertexes, function (vertex) {
-        self.link[vertex.id] = link[vertex.id] || [];
+        self.link[vertex.id] = self.link[vertex.id] || [];
     });
 
     // edge 를 기반으로 link 를 생성
@@ -114,13 +114,44 @@ SimpleDFS.prototype.parse = function () {
 
 
 
+SimpleDFS.prototype.solveCycle = function (cycle) {
+    console.table(_.map(cycle, function (link) {
+        return {
+            vertex : link.vertex.id,
+            opposite : link.opposite.id,
+            weight : link.weight
+        };
+    }));
+};
 
-function digest (vertex, path) {
 
-}
+SimpleDFS.prototype.trace = function (vertex, path) {
+
+    var self = this;
+
+    if (vertex.visited) {
+        return self.solveCycle(path);
+    }
+
+    vertex.visit();
+    _.each(this.link[vertex.id], function (link) {
+        if (link.edge.used) {
+            return;
+        }
+
+        link.edge.use();
+        path.push(link);
+        self.trace(link.opposite, path);
+        path.pop();
+        link.edge.clear();
+    });
+    vertex.leave();
+};
 
 SimpleDFS.prototype.digest = function () {
-    _.each(this.vertexes, function (vertex) {
-        digest(vertex);
+    var self = this;
+
+    _.each(self.vertexes, function (vertex) {
+        self.trace(vertex, []);
     });
 }
