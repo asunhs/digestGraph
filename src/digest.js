@@ -47,64 +47,10 @@ var datas = [
     { from : 'b', to : 'c', amount : 500 }
 ];
 
-function reverse(edge) {
-    return _.extend(edge, {
-        from : edge.to,
-        to : edge.from,
-        amount : -edge.amount
-    });
-}
+var vertexMap = _.chain(datas).map(function (data) {
+        return [data.from, data.to];
+    }).flatten().unique().map(function (id) {
+        return [id, new Vertex(id)];
+    }).object().value(),
+    ;
 
-var nodes = _.union(_.pluck(datas, 'from'), _.pluck(datas, 'to'));
-
-var edges = _.chain(datas).reduce(function (edges, data) {
-    var target;
-
-    target = _.find(edges, function (edge) {
-        return edge.from === data.from && edge.to === data.to;
-    });
-
-    if (!!target) {
-        target.amount += data.amount;
-        return edges;
-    }
-
-    target = _.find(edges, function (edge) {
-        return edge.from === data.to && edge.to === data.from;
-    });
-
-    if (!!target) {
-        target.amount -= data.amount;
-        return edges;
-    }
-
-    edges.push({
-        from : data.from,
-        to : data.to,
-        amount : data.amount
-    });
-
-    return edges;
-
-}, []).map(function (edge) {
-    return edge.amount >= 0 ? edge : reverse(edge);
-}).map(function (edge, index) {
-    return _.extend(edge, { index : index });
-}).value();
-
-var froms = _.map(nodes, function (node) {
-    return _.filter(edges, function (edge) {
-        return edge.from === node;
-    });
-});
-
-
-
-
-function search(from) {
-    var visited = [],
-        index = _.indexOf(nodes, from || _.first(nodes)),
-        edges = froms[index];
-
-
-}
