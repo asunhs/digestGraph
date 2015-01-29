@@ -51,6 +51,5 @@ var vertexMap = _.chain(datas).map(function (data) {
         return [data.from, data.to];
     }).flatten().unique().map(function (id) {
         return [id, new Vertex(id)];
-    }).object().value(),
-    ;
+    }).object().value();
 
