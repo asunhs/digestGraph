@@ -33,7 +33,11 @@
         nodes[4].link(nodes[6]);
         nodes[5].link(nodes[6]);*/
 
-        var sd = SimpleDFS(vertexes, edges);
+        var sd = SimpleDFS({
+            vertexes : vertexes,
+            edges : edges,
+            onDetectCycle : 'solveCycle'
+        });
     </script>
 </head>
 <body>

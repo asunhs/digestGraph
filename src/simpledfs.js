@@ -74,14 +74,19 @@ Edge.prototype.each = function (job) {
 
 
 
-function SimpleDFS (vertexes, edges) {
+function SimpleDFS (options) {
     if (!(this instanceof SimpleDFS)) {
-        return new SimpleDFS(vertexes, edges);
+        return new SimpleDFS(options);
     }
 
-    this.vertexes = vertexes;
-    this.edges = edges;
-    this.link = {};
+    options = options || {};
+
+    _.extend(this, {
+        vertexes : [],
+        edges : [],
+        link : {},
+        onDetectCycle : null
+    }, options);
 
     this.parse();
 }
@@ -95,6 +100,15 @@ SimpleDFS.prototype.Link = function (vertex, edge) {
     this.opposite = edge.opposite(vertex);
     this.weight = edge.from === vertex ? edge.weight : -edge.weight;
     this.edge = edge;
+    this.disabled = false;
+};
+
+SimpleDFS.prototype.Link.prototype.lock = function () {
+    this.disabled = true;
+};
+
+SimpleDFS.prototype.Link.prototype.unlock = function () {
+    this.disabled = false;
 };
 
 SimpleDFS.prototype.parse = function () {
@@ -134,9 +148,11 @@ SimpleDFS.prototype.solveCycle = function (cycle) {
         return link.weight;
     });
 
-    /*_.each(cycle, function (link) {
+    _.each(cycle, function (link) {
         link.weight -= min.weight;
-    });*/
+    });
+
+    min.lock();
 
     console.table(_.map(cycle, function (link) {
         return {
@@ -148,33 +164,38 @@ SimpleDFS.prototype.solveCycle = function (cycle) {
 };
 
 
-SimpleDFS.prototype.trace = function (vertex, path) {
+SimpleDFS.prototype._trace = function (vertex, path) {
 
     var self = this;
 
     if (vertex.visited) {
-        return self.solveCycle(self.findCycle(path));
+        if (_.isString(self.onDetectCycle) && _.isFunction(self[self.onDetectCycle])) {
+            return self[self.onDetectCycle](self.findCycle(path));
+        } else if (_.isFunction(self.onDetectCycle)) {
+            return self.onDetectCycle(self.findCycle(path));
+        }
+        return;
     }
 
     vertex.visit();
     _.each(this.link[vertex.id], function (link) {
-        if (link.edge.used) {
+        if (link.disabled || link.edge.used) {
             return;
         }
 
         link.edge.use();
         path.push(link);
-        self.trace(link.opposite, path);
+        self._trace(link.opposite, path);
         path.pop();
         link.edge.clear();
     });
     vertex.leave();
 };
 
-SimpleDFS.prototype.digest = function () {
+SimpleDFS.prototype.trace = function () {
     var self = this;
 
     _.each(self.vertexes, function (vertex) {
-        self.trace(vertex, []);
+        self._trace(vertex, []);
     });
 }
