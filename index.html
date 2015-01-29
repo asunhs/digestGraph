@@ -38,6 +38,16 @@
             edges : edges,
             onDetectCycle : 'solveCycle'
         });
+
+        var digest = sd.digest();
+
+        console.table(_.map(digest, function (edge) {
+            return {
+                from : edge.from.id,
+                to : edge.to.id,
+                weight : edge.weight
+            }
+        }));
     </script>
 </head>
 <body>

@@ -87,8 +87,6 @@ function SimpleDFS (options) {
         link : {},
         onDetectCycle : null
     }, options);
-
-    this.parse();
 }
 
 SimpleDFS.prototype.Link = function (vertex, edge) {
@@ -116,13 +114,13 @@ SimpleDFS.prototype.parse = function () {
 
     // vertex 만큼 생성
     _.each(self.vertexes, function (vertex) {
-        self.link[vertex.id] = self.link[vertex.id] || [];
+        self.link[vertex.id] = self.link[vertex.id] || {};
     });
 
     // edge 를 기반으로 link 를 생성
     _.each(self.edges, function (edge) {
-        return edge.each(function (a) {
-            self.link[a.id].push(new self.Link(a, edge));
+        return edge.each(function (a, b) {
+            self.link[a.id][b.id] = new self.Link(a, edge);
         });
     });
 };
@@ -142,25 +140,25 @@ SimpleDFS.prototype.findCycle = function (path) {
 };
 
 
-SimpleDFS.prototype.solveCycle = function (cycle) {
+SimpleDFS.prototype.pairLink = function (link) {
+    return this.link[link.opposite.id][link.vertex.id];
+};
 
-    var min = _.min(cycle, function (link) {
-        return link.weight;
-    });
+
+SimpleDFS.prototype.solveCycle = function (cycle) {
+    var self = this,
+        min = _.min(cycle, function (link) {
+            return link.weight;
+        }),
+        weight = min.weight;
 
     _.each(cycle, function (link) {
-        link.weight -= min.weight;
+        link.weight -= weight;
+        self.pairLink(link).weight += weight;
     });
 
     min.lock();
-
-    console.table(_.map(cycle, function (link) {
-        return {
-            vertex : link.vertex.id,
-            opposite : link.opposite.id,
-            weight : link.weight
-        };
-    }));
+    self.pairLink(min).lock();
 };
 
 
@@ -178,24 +176,48 @@ SimpleDFS.prototype._trace = function (vertex, path) {
     }
 
     vertex.visit();
-    _.each(this.link[vertex.id], function (link) {
-        if (link.disabled || link.edge.used) {
-            return;
-        }
+    _.chain(this.link[vertex.id])
+        .values()
+        .each(function (link) {
+            if (link.disabled || link.edge.used) {
+                return;
+            }
 
-        link.edge.use();
-        path.push(link);
-        self._trace(link.opposite, path);
-        path.pop();
-        link.edge.clear();
-    });
+            link.edge.use();
+            path.push(link);
+            self._trace(link.opposite, path);
+            path.pop();
+            link.edge.clear();
+        });
     vertex.leave();
 };
 
 SimpleDFS.prototype.trace = function () {
     var self = this;
 
+    self.parse();
     _.each(self.vertexes, function (vertex) {
         self._trace(vertex, []);
     });
-}
+    return self.link;
+};
+
+SimpleDFS.prototype.digest = function () {
+    var self = this;
+
+    self.trace();
+
+    return _.chain(self.link).values().map(function (links) {
+        return _.chain(links)
+            .values()
+            .filter(function (link) {
+                return link.weight > 0;
+            })
+            .map(function (link) {
+                return new Edge(link.vertex, link.opposite, link.weight);
+            })
+            .value();
+        })
+        .flatten()
+        .value();
+};
