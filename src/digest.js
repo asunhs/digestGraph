@@ -80,10 +80,7 @@ var vertexMap = _.chain(summary).map(function (data) {
 
 var testEdges = _.map(summary, function (item) {
     return new Edge(vertexMap[item.from], vertexMap[item.to], item.amount);
-})
-
-console.log(vertexMap);
-console.table(testEdges);
+});
 
 var testSd = SimpleDFS({
     vertexes : _.values(vertexMap),
