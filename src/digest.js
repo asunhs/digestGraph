@@ -47,9 +47,56 @@ var datas = [
     { from : 'b', to : 'c', amount : 500 }
 ];
 
-var vertexMap = _.chain(datas).map(function (data) {
+var summary = _.reduce(datas, function (basket, data) {
+    var target;
+
+    target = _.find(basket, function (item) {
+        return item.from === data.from && item.to === data.to;
+    });
+
+    if (!!target) {
+        return target.amount += data.amount, basket;
+    }
+
+    target = _.find(basket, function (item) {
+        return item.from === data.to && item.to === data.from;
+    });
+
+    if (!!target) {
+        return target.amount -= data.amount, basket;
+    }
+
+    return basket.push(_.clone(data)), basket;
+}, []);
+
+console.table(datas);
+console.table(summary);
+
+var vertexMap = _.chain(summary).map(function (data) {
         return [data.from, data.to];
     }).flatten().unique().map(function (id) {
         return [id, new Vertex(id)];
     }).object().value();
 
+var testEdges = _.map(summary, function (item) {
+    return new Edge(vertexMap[item.from], vertexMap[item.to], item.amount);
+})
+
+console.log(vertexMap);
+console.table(testEdges);
+
+var testSd = SimpleDFS({
+    vertexes : _.values(vertexMap),
+    edges : testEdges,
+    onDetectCycle : 'solveCycle'
+});
+
+var testDigest = testSd.digest();
+
+console.table(_.map(testDigest, function (edge) {
+    return {
+        from : edge.from.id,
+        to : edge.to.id,
+        weight : edge.weight
+    }
+}));

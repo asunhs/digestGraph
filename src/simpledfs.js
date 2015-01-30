@@ -68,6 +68,18 @@ Edge.prototype.each = function (job) {
     return result;
 };
 
+Edge.prototype.equals = function (edge) {
+    return this.from === edge.from && this.to === edge.to && this.weight === edge.weight;
+};
+
+Edge.prototype.same = function (edge) {
+    return this.from === edge.from && this.to === edge.to;
+};
+
+Edge.prototype.contrary = function (edge) {
+    return this.from === edge.to && this.to === edge.from;
+};
+
 
 
 
